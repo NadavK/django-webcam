@@ -27,11 +27,10 @@ class CameraField(forms.FileField):
     def to_python(self, data):
         filename, raw_val = data
         if raw_val:
-            return SimpleUploadedFile(filename, base64.decodestring(raw_val))
+            return SimpleUploadedFile(filename, base64.decodebytes(raw_val.encode()))
 
     def clean(self, data, initial=None):
         filename, raw_val = data
-        # maybe the form do not use the right CameraWidget ?
         if not filename:
             if initial:
                 filename = initial.name
