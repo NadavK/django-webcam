@@ -1,7 +1,9 @@
 import base64
 import uuid
+
 from django import forms
 from django.core.files.uploadedfile import SimpleUploadedFile
+
 from webcam.widgets import CameraWidget
 
 
@@ -27,7 +29,10 @@ class CameraField(forms.FileField):
     def to_python(self, data):
         filename, raw_val = data
         if raw_val:
-            return SimpleUploadedFile(filename, base64.decodestring(raw_val))
+            return SimpleUploadedFile(
+                filename,
+                base64.decodebytes(raw_val.encode())
+            )
 
     def clean(self, data, initial=None):
         filename, raw_val = data
