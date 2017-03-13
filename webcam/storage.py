@@ -10,7 +10,7 @@ def get_picture_name(suffix='jpg'):
 
 class CameraStorage(FileSystemStorage):
 
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         if self.exists(name):
             os.remove(self.path(name))
         return name
