@@ -1,57 +1,28 @@
 {% load i18n static %}
-<video id="video" width="320" height="240" autoplay></video>
-<canvas id="canvas" width="320" height="240"></canvas>
-<br/>
-<input type="button" class="btn" id="snap" value='Сделать фото' style="margin-left: 105px; margin-top: 7px;"/>
 
+<script src="{% static 'webcam/webcam.min.js' %}"></script>
+<div id="camera" style="width:320px; height:240px;"></div>
+<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}"/>
 <input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}"/>
+<div id="result"></div>
 
-<script type="text/javascript">
-    window.addEventListener("DOMContentLoaded", function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d"),
-            video = document.getElementById("video"),
-            videoObj = { "video": true },
-            errBack = function(error) {
-                console.log("Video capture error: ", error.code);
-            };
+<script type="application/javascript">
+    (function($) {
+        $(function () {
+            Webcam.attach('#camera');
 
-        if(navigator.getUserMedia) { // Standard
-            navigator.getUserMedia(videoObj, function(stream) {
-                video.src = stream;
-                video.play();
-            }, errBack);
-        } else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
-            navigator.webkitGetUserMedia(videoObj, function(stream){
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        }
-        else if(navigator.mozGetUserMedia) { // Firefox-prefixed
-            navigator.mozGetUserMedia(videoObj, function(stream){
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        }
-    }, false);
-
-
-    document.getElementById("snap").addEventListener("click", function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d");
-	    context.drawImage(video, 0, 0, 320, 240);
-
-        document.getElementById('data_{{ attrs.id }}').value = canvas.toDataURL("image/jpeg")
-    });
-
-    window.onload = function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d");
-
-        var image = new Image();
-            image.onload = function() {
-            context.drawImage(image, 0, 0);
-        };
-        image.src = 'data:image/jpeg;base64,' + document.getElementById('data_{{ attrs.id }}').value;
-    }
+            $('#take_snap').on('click', function () {
+                Webcam.snap(function (data_uri) {
+                    $('#result').html('<img src="' + data_uri + '" />');
+                    $('#data_{{ attrs.id }}').val(data_uri);
+                });
+            });
+            $('#clear_snap').on('click', function() {
+                $('#result').html('<div></div>');
+                $('#data_{{ attrs.id }}').val('');
+            })
+        });
+    })(django.jQuery || $);
 </script>
+<input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' />
+<input type="button" class="btn" id="clear_snap" value='{% trans "Clear" %}' />
