@@ -1,57 +1,62 @@
 {% load i18n static %}
-<video id="video" width="320" height="240" autoplay></video>
-<canvas id="canvas" width="320" height="240"></canvas>
-<br/>
-<input type="button" class="btn" id="snap" value='Сделать фото' style="margin-left: 105px; margin-top: 7px;"/>
 
-<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}"/>
+<div style="padding: 6px 0;margin-top: 0;margin-bottom: 0;margin-left: 170px;">
+    <div>
+        <div id="camera" style="width:320px; height:240px; display:none;"></div>
+        <div id="preview" style="width:320px; height:240px; display:none;"></div>
+    </div>
+    <div>
+        <input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
+        <input type="button" class="btn" id="change_snap" value='{% trans "Change" %}' style="display:none;" />
+    </div>
+</div>
 
-<script type="text/javascript">
-    window.addEventListener("DOMContentLoaded", function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d"),
-            video = document.getElementById("video"),
-            videoObj = { "video": true },
-            errBack = function(error) {
-                console.log("Video capture error: ", error.code);
-            };
+<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
+<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
 
-        if(navigator.getUserMedia) { // Standard
-            navigator.getUserMedia(videoObj, function(stream) {
-                video.src = stream;
-                video.play();
-            }, errBack);
-        } else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
-            navigator.webkitGetUserMedia(videoObj, function(stream){
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        }
-        else if(navigator.mozGetUserMedia) { // Firefox-prefixed
-            navigator.mozGetUserMedia(videoObj, function(stream){
-                video.src = window.URL.createObjectURL(stream);
-                video.play();
-            }, errBack);
-        }
-    }, false);
+<script src="{% static 'webcam/webcam.min.js' %}"></script>
+<script type="application/javascript">
+    (function($) {
+        $(function () {
+            var currentImage = $('#data_{{ attrs.id }}').val();
 
+            if (currentImage) {
+                $('#preview').html('<img src="data:image/jpeg;base64,' + currentImage + '" />').show();
+                $('#change_snap').show();
+            } else {
+                $('#camera').show();
+                $('#take_snap').show();
+                Webcam.attach('#camera');
+            }
 
-    document.getElementById("snap").addEventListener("click", function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d");
-	    context.drawImage(video, 0, 0, 320, 240);
+            $('#take_snap').on('click', function () {
+                Webcam.snap(function (data_uri) {
+                    $('#data_{{ attrs.id }}').val(data_uri);
 
-        document.getElementById('data_{{ attrs.id }}').value = canvas.toDataURL("image/jpeg")
-    });
+                    $('#preview').html('<img src="' + data_uri + '" />').show();
+                    $('#camera').hide();
 
-    window.onload = function() {
-        var canvas = document.getElementById("canvas"),
-            context = canvas.getContext("2d");
+                    // Change controls
+                    $('#take_snap').hide();
+                    $('#change_snap').show();
 
-        var image = new Image();
-            image.onload = function() {
-            context.drawImage(image, 0, 0);
-        };
-        image.src = 'data:image/jpeg;base64,' + document.getElementById('data_{{ attrs.id }}').value;
-    }
+                    Webcam.reset();
+                });
+            });
+
+            $('#change_snap').on('click', function() {
+                // Reset field data
+                $('#data_{{ attrs.id }}').val('');
+
+                $('#preview').hide();
+                $('#camera').show();
+
+                // Change controls
+                $('#take_snap').show();
+                $('#change_snap').hide();
+
+                Webcam.attach('#camera');
+            })
+        });
+    })(django.jQuery || $);
 </script>
