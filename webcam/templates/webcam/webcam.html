@@ -1,28 +1,53 @@
 {% load i18n static %}
 
 <script src="{% static 'webcam/webcam.min.js' %}"></script>
-<div id="camera" style="width:320px; height:240px;"></div>
 <input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}"/>
 <input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}"/>
-<div id="result"></div>
+<div id="camera" style="width:320px; height:240px;display:none;"></div>
+<div id="preview"></div>
+<input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
+<input type="button" class="btn" id="change_snap" value='{% trans "Change" %}' style="display:none;" />
 
 <script type="application/javascript">
     (function($) {
         $(function () {
             Webcam.attach('#camera');
 
+            var currentImage = $('#data_{{ attrs.id }}').val();
+
+            if (currentImage) {
+                $('#preview').html('<img src="' + currentImage + '" />').show();
+                $('#change_snap').show();
+
+            } else {
+                $('#camera').show();
+                $('#take_snap').show();
+            }
+
             $('#take_snap').on('click', function () {
                 Webcam.snap(function (data_uri) {
-                    $('#result').html('<img src="' + data_uri + '" />');
                     $('#data_{{ attrs.id }}').val(data_uri);
+
+                    $('#preview').html('<img src="' + data_uri + '" />').show();
+                    $('#camera').hide();
+
+                    // Change controls
+                    $('#take_snap').hide();
+                    $('#change_snap').show();
                 });
             });
-            $('#clear_snap').on('click', function() {
-                $('#result').html('<div></div>');
+
+            $('#change_snap').on('click', function() {
+                // Reset field data
                 $('#data_{{ attrs.id }}').val('');
+
+                $('#preview').hide();
+                $('#camera').show();
+
+                // Change controls
+                $('#take_snap').show();
+                $('#change_snap').hide();
             })
         });
     })(django.jQuery || $);
 </script>
-<input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' />
-<input type="button" class="btn" id="clear_snap" value='{% trans "Clear" %}' />
