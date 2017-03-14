@@ -1,27 +1,32 @@
 {% load i18n static %}
 
-<script src="{% static 'webcam/webcam.min.js' %}"></script>
-<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}"/>
-<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}"/>
-<div id="camera" style="width:320px; height:240px;display:none;"></div>
-<div id="preview"></div>
-<input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
-<input type="button" class="btn" id="change_snap" value='{% trans "Change" %}' style="display:none;" />
+<div style="padding: 6px 0;margin-top: 0;margin-bottom: 0;margin-left: 170px;">
+    <div>
+        <div id="camera" style="width:320px; height:240px; display:none;"></div>
+        <div id="preview" style="width:320px; height:240px; display:none;"></div>
+    </div>
+    <div>
+        <input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
+        <input type="button" class="btn" id="change_snap" value='{% trans "Change" %}' style="display:none;" />
+    </div>
+</div>
 
+<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
+<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
+
+<script src="{% static 'webcam/webcam.min.js' %}"></script>
 <script type="application/javascript">
     (function($) {
         $(function () {
-            Webcam.attach('#camera');
-
             var currentImage = $('#data_{{ attrs.id }}').val();
 
             if (currentImage) {
-                $('#preview').html('<img src="' + currentImage + '" />').show();
+                $('#preview').html('<img src="data:image/jpeg;base64,' + currentImage + '" />').show();
                 $('#change_snap').show();
-
             } else {
                 $('#camera').show();
                 $('#take_snap').show();
+                Webcam.attach('#camera');
             }
 
             $('#take_snap').on('click', function () {
@@ -34,6 +39,8 @@
                     // Change controls
                     $('#take_snap').hide();
                     $('#change_snap').show();
+
+                    Webcam.reset();
                 });
             });
 
@@ -47,6 +54,8 @@
                 // Change controls
                 $('#take_snap').show();
                 $('#change_snap').hide();
+
+                Webcam.attach('#camera');
             })
         });
     })(django.jQuery || $);
