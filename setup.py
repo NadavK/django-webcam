@@ -63,6 +63,7 @@ setup(
     description="django fields easy store webcam snaphot",
     license='BSD',
     packages=packages,
+    include_package_data=True,
     data_files=data_files,
     platforms=['any'],
     command_options={
