@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 class CameraWidget(Widget):
     template = 'webcam/webcam.html'
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         defaults = {'name': name,
                     'format': self.attrs['format'],
                     'width': self.attrs['width'],
