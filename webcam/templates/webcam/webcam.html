@@ -1,9 +1,23 @@
 {% load i18n static %}
 
-<div style="padding: 6px 0;margin-top: 0;margin-bottom: 0;margin-left: 170px;">
+
+
+<div style="padding: 6px 0;margin-top: 0;margin-bottom: 0;margin-left: 10px;">
     <div>
-        <div id="camera" style="width:320px; height:240px; display:none;"></div>
+        <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label></span>
+        <BR>s
+    </div>
+    <div>
+        <!--div id="camera" controls autoplay style="width:320px; height:240px; display:none;"></div-->
+<!--
+        <div id="camera" controls autoplay></div>
         <div id="preview" style="width:320px; height:240px; display:none;"></div>
+-->
+        <div id="image" style="width:320px; height:240px; display:none;"></div>
+        <video id="camera" controls autoplay style="width:320px; height:240px; display:none;"></video>
+        <canvas id="preview" style="width:320px; height:240px; display:none;"></canvas>
+
     </div>
     <div>
         <input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
@@ -12,25 +26,124 @@
 </div>
 
 <input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
+
+<!-- #TODO: Remember to remove the actual image from the form -->
 <input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
 
-<script src="{% static 'webcam/webcam.min.js' %}"></script>
+<!--For security reasons, you can't set the value of a file-input element directly.-->
+<!--input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" value="{{ picture.stream }}" accept="image/*" capture="environment "-->
+<input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" accept="image/*" capture="environment ">
+<input type="hidden" name="{{ widget.name }}_camera" id="id_{{ widget.name }}_camera"/>
+
+<!--script src="{% static 'webcam/webcam.min.js' %}"></script-->
 <script type="application/javascript">
     (function($) {
         $(function () {
-            var currentImage = $('#data_{{ attrs.id }}').val();
-
-            if (currentImage) {
-                $('#preview').html('<img src="data:image/jpeg;base64,' + currentImage + '" />').show();
+            if ("{{ widget }}" && "{{ widget.url }}") {
+                console.log("HAS iMAGE URL!!!!!!!!!!!!!!!!!!!!")
+                var currentImageUrl = "{{ widget.url }}";
+                $('#image').html('<img src="' + currentImageUrl + '" />').show();
                 $('#change_snap').show();
             } else {
+                console.log("NO iMAGE URL!!!!!!!!!!!!!!!!!!!!")
                 $('#camera').show();
                 $('#take_snap').show();
-                Webcam.attach('#camera');
+                //Webcam.attach('#camera');
+
+                const player = document.getElementById('camera');
+
+                const constraints = {
+                    video: true,
+                };
+
+                // Attach the video stream to the video element and autoplay.
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then((stream) => {
+                        player.srcObject = stream;
+                    });
             }
 
             $('#take_snap').on('click', function () {
-                Webcam.snap(function (data_uri) {
+                const canvas = document.getElementById('preview');
+                const player = document.getElementById('camera');
+                const file = document.getElementById('id_{{ widget.name }}');
+                file.type = "hidden";
+                $('#preview').show();
+                const context = canvas.getContext('2d');
+
+                // Draw the video frame to the canvas.
+                context.drawImage(player, 0, 0, canvas.width, canvas.height);
+
+
+                var dataURL = canvas.toDataURL( 'image/png' );
+                console.log("toDataURL:", dataURL)
+                file.value = dataURL;
+
+                //obtain the image blob
+
+
+                // #TODO: Context may be higher quality\
+
+
+
+
+                console.log("Calling toBlob")
+
+                canvas.toBlob(blob =>  {
+                    /*
+                    console.log("toBlob")
+                    console.log("toBlob:", blob);
+
+                    new Response(blob).arrayBuffer()
+                        .then(buffer=>{
+                            console.log("buffer:", buffer);
+                            file.value = buffer;
+                        });
+                    */
+
+                    //var bufferPromise = blob.arrayBuffer();
+                    //blob.arrayBuffer().then(buffer => {console.log("buffer:", buffer);});
+                    //var buffer = await blob.arrayBuffer();
+
+
+
+                    /*
+                    console.log('URL.createObjectURL(blob):', URL.createObjectURL(blob)); // this line should be here
+
+                    var link = document.createElement("a");
+                    link.download = "image.png";
+                    link.href = URL.createObjectURL(blob);
+                    */
+
+                    /*
+                    //copy the image to the file input element
+                    const dT = new ClipboardEvent('').clipboardData || // Firefox < 62 workaround exploiting https://bugzilla.mozilla.org/show_bug.cgi?id=1422655
+                      new DataTransfer(); // specs compliant (as of March 2018 only Chrome)
+                    dT.items.add(new File(['foo'], blob));
+                    file.files = dT.files;*/
+
+                    //file.value = blob;
+                    //file.value = link.href;
+
+
+                    //var fd = new FormData();
+                    //fd.append("myFile", blob, "thumb.jpg");
+
+                });
+
+
+
+/*
+                // Send image data to server
+                xhr = new XMLHttpRequest();
+                //xhr.addEventListener( 'load', doPhotoLoad );
+                xhr.open( 'POST', data_uri, true );
+                xhr.setRequestHeader( 'X-Client-ID', 'uuid' );
+                xhr.send( canvas.toDataURL( 'image/png' ) );
+*/
+
+
+                /*Webcam.snap(function (data_uri) {
                     $('#data_{{ attrs.id }}').val(data_uri);
 
                     $('#preview').html('<img src="' + data_uri + '" />').show();
@@ -41,9 +154,9 @@
                     $('#change_snap').show();
 
                     Webcam.reset();
-                });
+                });*/
             });
-
+/*
             $('#change_snap').on('click', function() {
                 // Reset field data
                 $('#data_{{ attrs.id }}').val('');
@@ -57,6 +170,54 @@
 
                 Webcam.attach('#camera');
             })
+  */
         });
     })(django.jQuery || $);
 </script>
+
+
+
+<!--
+Working example:
+<button id="capture">Capture</button>
+<video id="player" width=320 height=240 controls autoplay></video>
+<canvas id="canvas" width=320 height=240></canvas>
+<script>
+  const player = document.getElementById('player');
+  const canvas = document.getElementById('canvas');
+  const context = canvas.getContext('2d');
+  const captureButton = document.getElementById('capture');
+
+  const constraints = {
+    video: true,
+  };
+
+  captureButton.addEventListener('click', () => {
+    // Draw the video frame to the canvas.
+    context.drawImage(player, 0, 0, canvas.width, canvas.height);
+
+    // Send image data to server
+    xhr = new XMLHttpRequest();
+    //xhr.addEventListener( 'load', doPhotoLoad );
+    xhr.open( 'POST', '10.100.101.10/upload', true );
+    xhr.setRequestHeader( 'X-Client-ID', 'uuid' );
+    xhr.send( canvas.toDataURL( 'image/png' ) );
+
+  });
+
+  // Attach the video stream to the video element and autoplay.
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then((stream) => {
+      player.srcObject = stream;
+    });
+
+
+</script>
+
+
+
+
+
+<input type="file" accept="image/*">
+
+-->
