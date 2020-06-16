@@ -9,12 +9,11 @@ django fields to get and store webcam snaphot
 * Manage multiple fields in the same page
 * Works in the admin as any other field ( need ``import webcam.admin`` to configure ``FORMFIELD_FOR_DBFIELD_DEFAULTS``)
 
-.. note:: based on jquery.webcam plugin from Robert Eisele (robert@xarg.org)
+.. Note:: Camera now based on HTML5
 
 
 Examples
 ========
-
 
 models.py::
 
