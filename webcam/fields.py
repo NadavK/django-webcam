@@ -3,7 +3,6 @@ from django.db import models
 from django.utils.text import capfirst
 from webcam import forms
 from webcam.picture import CameraPicture
-from webcam.storage import CameraStorage, get_picture_name
 
 
 class CameraField(models.FileField):
@@ -12,12 +11,10 @@ class CameraField(models.FileField):
     def __init__(self, *args, **kwargs):
         self.format = kwargs.pop('format', 'jpg')
         super(CameraField, self).__init__(*args, **kwargs)
-        self.storage = kwargs.get('storage', CameraStorage())
 
-    def get_filename(self, filename):
-        if not filename:
-            filename = get_picture_name(self.format)
-        return os.path.normpath(self.storage.get_valid_name(os.path.basename(filename)))
+    def generate_filename(self, instance, filename):
+        filename = filename + '.' + self.format
+        return super().generate_filename(instance, filename)
 
     def formfield(self, **kwargs):
         defaults = {'form_class': forms.CameraField,
