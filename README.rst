@@ -2,25 +2,22 @@
 django-webcam
 ===================
 
-.. warning:: From version 1.0 beta, storing on the database is not available.
+django fields to get and store webcam snaphot
 
-
-django fields to store webcam snaphot ( ie Facebook Profile )
-
-* fully compatible with
-* Support gif/jpeg/png
+* fully compatible with Django FileField protocol
+* Supports gif/jpeg/png
 * Manage multiple fields in the same page
 * Works in the admin as any other field ( need ``import webcam.admin`` to configure ``FORMFIELD_FOR_DBFIELD_DEFAULTS``)
 
-.. note:: based on jquery.webcam plugin from Robert Eisele (robert@xarg.org)
+.. Note:: Camera now based on HTML5
 
 
 Examples
 ========
 
-
 models.py::
 
+    import webcam.admin # needed to show the right widget in the admin
     from django.db import models
     from webcam.fields import CameraField
 

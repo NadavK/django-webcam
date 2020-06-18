@@ -1,31 +1,44 @@
-from django.forms.widgets import Widget
+import base64
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.forms.widgets import Widget, ClearableFileInput
 from django.template.loader import render_to_string
+from datetime import datetime
+import re
 
+#class CameraWidget(Widget):
+class CameraWidget(ClearableFileInput):
+    template = 'webcam/webcam.html'
 
-class CameraWidget(Widget):
-    template = 'webcam/fswidget.html'
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        try:
+            context['widget'].update({
+                'url': value.url
+            })
+        except:
+            pass
+        return context
 
-    class Media:
-        css = {'all': ('webcam/django-webcam.min.css',)}
-        js = ('webcam/jquery-1.7.2.min.js',
-              'webcam/jquery.django-webcam.min.js',
-              'webcam/django-webcam.js',)
-
-    def render(self, name, value, attrs=None):
-        defaults = {'name': name,
-                    'format': self.attrs['format'],
-                    'width': self.attrs['width'],
-                    'height': self.attrs['height'],
-                    'camera_width': self.attrs['camera_width'],
-                    'camera_height': self.attrs['camera_height'],
-                    'picture': value,
-                    'attrs': attrs}
-        defaults.update(attrs)
-        return render_to_string(self.template, defaults)
+    def render(self, name, value, attrs=None, renderer=None):
+        context = self.get_context(name, value, attrs)
+        #template = loader.get_template(self.template_name).render(context)
+        return render_to_string(self.template, context)
 
     def value_from_datadict(self, data, files, name):
-        raw_val = data.get("data_%s" % name, None)
-        filename = data.get("%s" % name, None)
-        if raw_val:
-            raw_val = raw_val.replace('data:image/jpeg;base64,', '')
-        return (filename, raw_val)
+        upload = super().value_from_datadict(data, files, name)
+        # proper INPUT FILE html upload either contains either the image, or "false" if the clear checkbox is selected
+        # will be "none" if upload is from camera-capture
+        if not upload is None:
+            return upload
+        file_formdata  = data.get(name, None)
+        if not file_formdata:
+            return None
+
+        # data:image/png;base64,{raw data...}
+        image_type, image_raw = file_formdata.split(',', 1);    # Extract the meta-data and the raw-data
+        image_type = re.search('/(.*);', 'data:image/png;base64').group(1)  # extract jpeg, png, etc.
+        filename = "%s_%s.%s" % (name, datetime.today().isoformat(), image_type)       # NOTE: not threadsafe
+        try:
+            return SimpleUploadedFile(filename, base64.decodebytes(image_raw.encode()))
+        except:
+            return None

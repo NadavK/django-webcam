@@ -1,0 +1,89 @@
+{% load i18n static %}
+
+<div>
+    <div>
+        <img id="image" style="vertical-align:unset; width:320px; height:240px; display:none;"></img>
+        <canvas id="preview" style="width:320px; height:240px; display:none;"></canvas>
+        <video id="camera" controls autoplay style="width:320px; height:240px; display:none;"></video>
+        <canvas id="canvas" style="width:320px; height:240px; display:none;"></canvas>
+    </div>
+    <div>
+        <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
+        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
+    </div>
+    <div>
+        <input type="button" class="btn" id="take_snapshot" value='{% trans "Take snapshot" %}' style="display:none;" />
+        <input type="button" class="btn" id="change_snapshot" value='{% trans "Change" %}' style="display:none;" />
+        <!--For security reasons, you can't set the value of a file-input element directly.-->
+        <input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" accept="image/*" capture="environment ">
+    </div>
+</div>
+
+<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
+<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
+
+<script type="application/javascript">
+    (function($) {
+        $(function () {
+
+            function showCamera() {
+                $('#camera').show();
+                $('#take_snapshot').show();
+                //Webcam.attach('#camera');
+
+                const camera = document.getElementById('camera');
+                const constraints = {
+                    video: true,
+                };
+                // Attach the video stream to the video element and autoplay.
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then((stream) => {
+                        camera.srcObject = stream;
+                    });
+            }
+
+            if ("{{ widget }}" && "{{ widget.url }}") {
+                document.getElementById('image').src="{{ widget.url }}";
+                $('#image').show();
+                $('#change_snapshot').show();
+            } else {
+                showCamera();
+           }
+
+            $('#change_snapshot').on('click', function () {
+                $('#change_snapshot').hide();
+                showCamera();
+            });
+
+            $('#take_snapshot').on('click', function () {
+                const camera = document.getElementById('camera');
+                const camera_width = camera.srcObject.getVideoTracks()[0].getSettings().width
+                const camera_height = camera.srcObject.getVideoTracks()[0].getSettings().height
+
+                // Draw the video frame to the preview for visualization.
+                const preview = document.getElementById('preview');
+                preview.width = 320;
+                preview.height = 240;
+                const preview_context = preview.getContext('2d');
+                preview_context.drawImage(camera,
+                    0, 0, camera_width, camera_height,
+                    0, 0, 320, 240);
+                $('#image').hide();
+                $('#preview').show();
+
+                // Draw the video frame to the canvas to be saved as a file.
+                const canvas = document.getElementById('canvas');
+                canvas.width = camera_width
+                canvas.height = camera_height
+                const canvas_context = canvas.getContext('2d');
+                canvas_context.drawImage(camera,
+                    0, 0, camera_width, camera_height);
+
+                // Set the file contents
+                const file = document.getElementById('id_{{ widget.name }}');
+                file.type = "hidden";
+                file.value = canvas.toDataURL( 'image/png' );
+            });
+        });
+    })(django.jQuery || $);
+</script>
