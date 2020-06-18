@@ -3,26 +3,25 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.widgets import Widget, ClearableFileInput
 from django.template.loader import render_to_string
 from datetime import datetime
-
+import re
 
 #class CameraWidget(Widget):
 class CameraWidget(ClearableFileInput):
     template = 'webcam/webcam.html'
 
-    def render(self, name, value, attrs=None, renderer=None):
+    def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        context['widget'].update({
-            'name': name,
-            'format': self.attrs['format'],
-            'width': self.attrs['width'],
-            'height': self.attrs['height'],
-            'camera_width': self.attrs['camera_width'],
-            'camera_height': self.attrs['camera_height'],
-            #'picture': value,
-            'url': value and value.url,
-            'attrs': attrs,
-        })
-        #defaults.update(attrs)
+        try:
+            context['widget'].update({
+                'url': value.url
+            })
+        except:
+            pass
+        return context
+
+    def render(self, name, value, attrs=None, renderer=None):
+        context = self.get_context(name, value, attrs)
+        #template = loader.get_template(self.template_name).render(context)
         return render_to_string(self.template, context)
 
     def value_from_datadict(self, data, files, name):
@@ -31,16 +30,15 @@ class CameraWidget(ClearableFileInput):
         # will be "none" if upload is from camera-capture
         if not upload is None:
             return upload
-        raw_val = data.get(name, None)
-        if raw_val:
-            raw_val = raw_val.replace('data:image/jpeg;base64,', '')
-            raw_val = raw_val.replace('data:image/png;base64,', '')
-        filename = "%s_%s" % (name, datetime.today().isoformat())       # NOTE: not threadsafe
+        file_formdata  = data.get(name, None)
+        if not file_formdata:
+            return None
 
-        return SimpleUploadedFile(filename, base64.decodebytes(raw_val.encode()))
-
-        data.name = filename
-        data.size = len(raw_val)
-        data.raw = raw_val
-        return data
-        #return filename, raw_val
+        # data:image/png;base64,{raw data...}
+        image_type, image_raw = file_formdata.split(',', 1);    # Extract the meta-data and the raw-data
+        image_type = re.search('/(.*);', 'data:image/png;base64').group(1)  # extract jpeg, png, etc.
+        filename = "%s_%s.%s" % (name, datetime.today().isoformat(), image_type)       # NOTE: not threadsafe
+        try:
+            return SimpleUploadedFile(filename, base64.decodebytes(image_raw.encode()))
+        except:
+            return None

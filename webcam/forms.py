@@ -27,23 +27,3 @@ class CameraField(forms.FileField):
                 'camera_width': self.camera_width,
                 'camera_height': self.camera_height})
         return attrs
-
-    def Xto_python(self, data):
-        try:
-            filename, raw_val = data
-            if raw_val:
-                return SimpleUploadedFile(filename, base64.decodebytes(raw_val.encode()))
-        except:
-            return data
-
-    def Xclean(self, data, initial=None):
-        filename = data.name
-        raw_val = data.raw
-        #filename, raw_val = data
-        if not filename:
-            if initial:
-                filename = initial.name
-            else:
-                filename = "{0}.{1}".format(uuid.uuid4(), self.format)
-
-        return super(CameraField, self).clean((filename, raw_val), initial)

@@ -1,223 +1,89 @@
 {% load i18n static %}
 
-
-
-<div style="padding: 6px 0;margin-top: 0;margin-bottom: 0;margin-left: 10px;">
+<div>
+    <div>
+        <img id="image" style="vertical-align:unset; width:320px; height:240px; display:none;"></img>
+        <canvas id="preview" style="width:320px; height:240px; display:none;"></canvas>
+        <video id="camera" controls autoplay style="width:320px; height:240px; display:none;"></video>
+        <canvas id="canvas" style="width:320px; height:240px; display:none;"></canvas>
+    </div>
     <div>
         <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
-        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label></span>
-        <BR>s
+        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
     </div>
     <div>
-        <!--div id="camera" controls autoplay style="width:320px; height:240px; display:none;"></div-->
-<!--
-        <div id="camera" controls autoplay></div>
-        <div id="preview" style="width:320px; height:240px; display:none;"></div>
--->
-        <div id="image" style="width:320px; height:240px; display:none;"></div>
-        <video id="camera" controls autoplay style="width:320px; height:240px; display:none;"></video>
-        <canvas id="preview" style="width:320px; height:240px; display:none;"></canvas>
-
-    </div>
-    <div>
-        <input type="button" class="btn" id="take_snap" value='{% trans "Take snapshot" %}' style="display:none;" />
-        <input type="button" class="btn" id="change_snap" value='{% trans "Change" %}' style="display:none;" />
+        <input type="button" class="btn" id="take_snapshot" value='{% trans "Take snapshot" %}' style="display:none;" />
+        <input type="button" class="btn" id="change_snapshot" value='{% trans "Change" %}' style="display:none;" />
+        <!--For security reasons, you can't set the value of a file-input element directly.-->
+        <input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" accept="image/*" capture="environment ">
     </div>
 </div>
 
 <input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
-
-<!-- #TODO: Remember to remove the actual image from the form -->
 <input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
 
-<!--For security reasons, you can't set the value of a file-input element directly.-->
-<!--input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" value="{{ picture.stream }}" accept="image/*" capture="environment "-->
-<input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" accept="image/*" capture="environment ">
-<input type="hidden" name="{{ widget.name }}_camera" id="id_{{ widget.name }}_camera"/>
-
-<!--script src="{% static 'webcam/webcam.min.js' %}"></script-->
 <script type="application/javascript">
     (function($) {
         $(function () {
-            if ("{{ widget }}" && "{{ widget.url }}") {
-                console.log("HAS iMAGE URL!!!!!!!!!!!!!!!!!!!!")
-                var currentImageUrl = "{{ widget.url }}";
-                $('#image').html('<img src="' + currentImageUrl + '" />').show();
-                $('#change_snap').show();
-            } else {
-                console.log("NO iMAGE URL!!!!!!!!!!!!!!!!!!!!")
+
+            function showCamera() {
                 $('#camera').show();
-                $('#take_snap').show();
+                $('#take_snapshot').show();
                 //Webcam.attach('#camera');
 
-                const player = document.getElementById('camera');
-
+                const camera = document.getElementById('camera');
                 const constraints = {
                     video: true,
                 };
-
                 // Attach the video stream to the video element and autoplay.
                 navigator.mediaDevices.getUserMedia(constraints)
                     .then((stream) => {
-                        player.srcObject = stream;
+                        camera.srcObject = stream;
                     });
             }
 
-            $('#take_snap').on('click', function () {
-                const canvas = document.getElementById('preview');
-                const player = document.getElementById('camera');
+            if ("{{ widget }}" && "{{ widget.url }}") {
+                document.getElementById('image').src="{{ widget.url }}";
+                $('#image').show();
+                $('#change_snapshot').show();
+            } else {
+                showCamera();
+           }
+
+            $('#change_snapshot').on('click', function () {
+                $('#change_snapshot').hide();
+                showCamera();
+            });
+
+            $('#take_snapshot').on('click', function () {
+                const camera = document.getElementById('camera');
+                const camera_width = camera.srcObject.getVideoTracks()[0].getSettings().width
+                const camera_height = camera.srcObject.getVideoTracks()[0].getSettings().height
+
+                // Draw the video frame to the preview for visualization.
+                const preview = document.getElementById('preview');
+                preview.width = 320;
+                preview.height = 240;
+                const preview_context = preview.getContext('2d');
+                preview_context.drawImage(camera,
+                    0, 0, camera_width, camera_height,
+                    0, 0, 320, 240);
+                $('#image').hide();
+                $('#preview').show();
+
+                // Draw the video frame to the canvas to be saved as a file.
+                const canvas = document.getElementById('canvas');
+                canvas.width = camera_width
+                canvas.height = camera_height
+                const canvas_context = canvas.getContext('2d');
+                canvas_context.drawImage(camera,
+                    0, 0, camera_width, camera_height);
+
+                // Set the file contents
                 const file = document.getElementById('id_{{ widget.name }}');
                 file.type = "hidden";
-                $('#preview').show();
-                const context = canvas.getContext('2d');
-
-                // Draw the video frame to the canvas.
-                context.drawImage(player, 0, 0, canvas.width, canvas.height);
-
-
-                var dataURL = canvas.toDataURL( 'image/png' );
-                console.log("toDataURL:", dataURL)
-                file.value = dataURL;
-
-                //obtain the image blob
-
-
-                // #TODO: Context may be higher quality\
-
-
-
-
-                console.log("Calling toBlob")
-
-                canvas.toBlob(blob =>  {
-                    /*
-                    console.log("toBlob")
-                    console.log("toBlob:", blob);
-
-                    new Response(blob).arrayBuffer()
-                        .then(buffer=>{
-                            console.log("buffer:", buffer);
-                            file.value = buffer;
-                        });
-                    */
-
-                    //var bufferPromise = blob.arrayBuffer();
-                    //blob.arrayBuffer().then(buffer => {console.log("buffer:", buffer);});
-                    //var buffer = await blob.arrayBuffer();
-
-
-
-                    /*
-                    console.log('URL.createObjectURL(blob):', URL.createObjectURL(blob)); // this line should be here
-
-                    var link = document.createElement("a");
-                    link.download = "image.png";
-                    link.href = URL.createObjectURL(blob);
-                    */
-
-                    /*
-                    //copy the image to the file input element
-                    const dT = new ClipboardEvent('').clipboardData || // Firefox < 62 workaround exploiting https://bugzilla.mozilla.org/show_bug.cgi?id=1422655
-                      new DataTransfer(); // specs compliant (as of March 2018 only Chrome)
-                    dT.items.add(new File(['foo'], blob));
-                    file.files = dT.files;*/
-
-                    //file.value = blob;
-                    //file.value = link.href;
-
-
-                    //var fd = new FormData();
-                    //fd.append("myFile", blob, "thumb.jpg");
-
-                });
-
-
-
-/*
-                // Send image data to server
-                xhr = new XMLHttpRequest();
-                //xhr.addEventListener( 'load', doPhotoLoad );
-                xhr.open( 'POST', data_uri, true );
-                xhr.setRequestHeader( 'X-Client-ID', 'uuid' );
-                xhr.send( canvas.toDataURL( 'image/png' ) );
-*/
-
-
-                /*Webcam.snap(function (data_uri) {
-                    $('#data_{{ attrs.id }}').val(data_uri);
-
-                    $('#preview').html('<img src="' + data_uri + '" />').show();
-                    $('#camera').hide();
-
-                    // Change controls
-                    $('#take_snap').hide();
-                    $('#change_snap').show();
-
-                    Webcam.reset();
-                });*/
+                file.value = canvas.toDataURL( 'image/png' );
             });
-/*
-            $('#change_snap').on('click', function() {
-                // Reset field data
-                $('#data_{{ attrs.id }}').val('');
-
-                $('#preview').hide();
-                $('#camera').show();
-
-                // Change controls
-                $('#take_snap').show();
-                $('#change_snap').hide();
-
-                Webcam.attach('#camera');
-            })
-  */
         });
     })(django.jQuery || $);
 </script>
-
-
-
-<!--
-Working example:
-<button id="capture">Capture</button>
-<video id="player" width=320 height=240 controls autoplay></video>
-<canvas id="canvas" width=320 height=240></canvas>
-<script>
-  const player = document.getElementById('player');
-  const canvas = document.getElementById('canvas');
-  const context = canvas.getContext('2d');
-  const captureButton = document.getElementById('capture');
-
-  const constraints = {
-    video: true,
-  };
-
-  captureButton.addEventListener('click', () => {
-    // Draw the video frame to the canvas.
-    context.drawImage(player, 0, 0, canvas.width, canvas.height);
-
-    // Send image data to server
-    xhr = new XMLHttpRequest();
-    //xhr.addEventListener( 'load', doPhotoLoad );
-    xhr.open( 'POST', '10.100.101.10/upload', true );
-    xhr.setRequestHeader( 'X-Client-ID', 'uuid' );
-    xhr.send( canvas.toDataURL( 'image/png' ) );
-
-  });
-
-  // Attach the video stream to the video element and autoplay.
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then((stream) => {
-      player.srcObject = stream;
-    });
-
-
-</script>
-
-
-
-
-
-<input type="file" accept="image/*">
-
--->
