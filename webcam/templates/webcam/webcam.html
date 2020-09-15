@@ -2,38 +2,60 @@
 
 <div>
     <div>
-        <img id="image" style="vertical-align:unset; width:320px; height:240px; display:none;"></img>
-        <canvas id="preview" style="width:320px; height:240px; display:none;"></canvas>
-        <video id="camera" controls autoplay style="width:320px; height:240px; display:none;"></video>
-        <canvas id="canvas" style="width:320px; height:240px; display:none;"></canvas>
+        <img id="{{ widget.image_id }}" src="{{ widget.value.url }}" style="vertical-align:unset; width:320px; height:240px; display:none;"></img>
+        <video id="{{ widget.camera_id }}" controls autoplay style="width:320px; height:240px; display:none;"></video>
+        <canvas id="{{ widget.preview_id }}" style="width:320px; height:240px; display:none;"></canvas>
+        <canvas id="{{ widget.canvas_id }}" style="width:320px; height:240px; display:none;"></canvas>
     </div>
     <div>
         <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}">
         <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
     </div>
     <div>
-        <input type="button" class="btn" id="take_snapshot" value='{% trans "Take snapshot" %}' style="display:none;" />
-        <input type="button" class="btn" id="change_snapshot" value='{% trans "Change" %}' style="display:none;" />
+        <input type="button" class="btn" id="{{ widget.take_snapshot_id }}" value='{% trans "Take snapshot" %}' style="display:none;" />
+        <input type="button" class="btn" id="{{ widget.change_snapshot_id }}" value='{% trans "Change" %}' style="display:none;" />
         <!--For security reasons, you can't set the value of a file-input element directly.-->
         <input type="file" name="{{ widget.name }}" id="id_{{ widget.name }}" accept="image/*" capture="environment ">
     </div>
 </div>
 
-<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />
-<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />
+<!--<input type="hidden" name="{{ name }}" id="{{ attrs.id }}" value="{{ picture.name }}" />-->
+<!--<input type="hidden" name="data_{{ name }}" id="data_{{ attrs.id }}" value="{{ picture.stream }}" />-->
 
 <script type="application/javascript">
     (function($) {
         $(function () {
+            console.log("{{ widget.name }}: {{ widget.value.url }}")
+            console.log("{{ widget }}")
+            if ("{{ widget.value.url }}") {
+                console.log('{{ widget.name }}: is_initial: "{{ widget.value.url }}"');
+                //document.getElementById('{{ widget.image_id }}').src="{{ widget.value.url }}";
+                $('#{{ widget.image_id }}').show();
+                $('#{{ widget.change_snapshot_id }}').show();
+            } else {
+                console.log('{{ widget.name }}: no image');
+                showCamera();
+           }
+
+            $('#{{ widget.change_snapshot_id }}').on('click', function () {
+                console.log('{{ widget.name }}: change_snapshot clicked');
+                $('#{{ widget.change_snapshot_id }}').hide();
+                showCamera();
+            });
 
             function showCamera() {
-                $('#camera').show();
-                $('#take_snapshot').show();
+                console.log('{{ widget.name }}: showCamera');
+                $('#{{ widget.camera_id }}').show();
+                $('#{{ widget.take_snapshot_id }}').show();
                 //Webcam.attach('#camera');
 
-                const camera = document.getElementById('camera');
+                const camera = document.getElementById('{{ widget.camera_id }}');
                 const constraints = {
-                    video: true,
+                    video: {
+                        facingMode: {
+                            ideal: 'environment'
+                        }
+                    }
                 };
                 // Attach the video stream to the video element and autoplay.
                 navigator.mediaDevices.getUserMedia(constraints)
@@ -42,37 +64,25 @@
                     });
             }
 
-            if ("{{ widget }}" && "{{ widget.url }}") {
-                document.getElementById('image').src="{{ widget.url }}";
-                $('#image').show();
-                $('#change_snapshot').show();
-            } else {
-                showCamera();
-           }
-
-            $('#change_snapshot').on('click', function () {
-                $('#change_snapshot').hide();
-                showCamera();
-            });
-
-            $('#take_snapshot').on('click', function () {
-                const camera = document.getElementById('camera');
+            $('#{{ widget.take_snapshot_id }}').on('click', function () {
+                console.log('{{ widget.name }}: takeSnap');
+                const camera = document.getElementById('{{ widget.camera_id }}');
                 const camera_width = camera.srcObject.getVideoTracks()[0].getSettings().width
                 const camera_height = camera.srcObject.getVideoTracks()[0].getSettings().height
 
                 // Draw the video frame to the preview for visualization.
-                const preview = document.getElementById('preview');
+                const preview = document.getElementById('{{widget.preview_id }}');
                 preview.width = 320;
                 preview.height = 240;
                 const preview_context = preview.getContext('2d');
                 preview_context.drawImage(camera,
                     0, 0, camera_width, camera_height,
                     0, 0, 320, 240);
-                $('#image').hide();
-                $('#preview').show();
+                $('#{{ widget.image_id }}').hide();
+                $('#{{ widget.preview_id }}').show();
 
                 // Draw the video frame to the canvas to be saved as a file.
-                const canvas = document.getElementById('canvas');
+                const canvas = document.getElementById('{{ widget.canvas_id }}');
                 canvas.width = camera_width
                 canvas.height = camera_height
                 const canvas_context = canvas.getContext('2d');

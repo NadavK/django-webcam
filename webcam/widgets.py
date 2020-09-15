@@ -11,12 +11,15 @@ class CameraWidget(ClearableFileInput):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        try:
-            context['widget'].update({
-                'url': value.url
-            })
-        except:
-            pass
+        context['widget'].update({
+            'image_id': name + '-image_id',
+            'preview_id': name + '-preview_id',
+            'camera_id': name + '-camera_id',
+            'canvas_id': name + '-canvas_id',
+            'take_snapshot_id': name + '-take_snapshot_id',
+            'change_snapshot_id': name + '-change_snapshot_id',
+            #'url': value.url
+        })
         return context
 
     def render(self, name, value, attrs=None, renderer=None):
